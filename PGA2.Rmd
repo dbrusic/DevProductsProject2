@@ -1,0 +1,145 @@
+---
+title: "Peer Graded Assignment 2"
+author: "Dan Brusic"
+date: "January 31, 2018"
+output: 
+  ioslides_presentation: 
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Comparing Super Bowl Winners and Losers
+In this presentation we will briefly look at all 102 teams that have played in the past 51 super bowls (professional football championship in the United States) from the 1966 to 2016 seasons. The data comes from the website, [Pro Football Reference](https://www.pro-football-reference.com/). The data set contains all 102 super bowl teams and their regular season rank regarding their offensive and defensive yards per play.
+
+## Load the Data
+The `id` variable is the season year. The `wl` variable is whether that team won or lost the super bowl (represented by a 1 and 0 respectively). 
+```{r echo = TRUE, comment=""}
+df = read.csv("superbowlODranks.csv")
+df = df[,-1]
+rbind(df[1:4,], df[52:55,])
+```
+
+## Making the Plot
+The next slide plots all 51 super bowl winners and the number of ranks ahead of their opponent they were. In other words, each winning team's offensive and defensive ranks were subtracted from their super bowl opponent's ranks.
+```{r echo=TRUE}
+odiff = df$Ro.yardsperplayrank[52:102] - df$Ro.yardsperplayrank[1:51]
+ddiff = df$Rd.yardsperplayrank[52:102] - df$Rd.yardsperplayrank[1:51]
+```
+
+## Making the Plot
+The x and y coordinates for each winning team are `odiff` and `ddiff` respectively. The plot allows you to highlight each of the four quadrants.
+
+- Quadrant 1: Teams that had both a better offense and defense.
+- Quadrant 2: Teams that only had a better defense.
+- Quadrant 3: Teams that had both a worse offense and worse defense.
+- Quadrant 4: Teams that had only a better offense.
+
+
+## Plot of Super Bowl Winners
+```{r message=FALSE}
+library(plotly)
+library(dplyr)
+```
+
+```{r}
+Q0 = list(
+        type = "rect",
+        xref = "x", yref = "y",
+        x0 = 0, y0 = 0,
+        x1 = 19, y1 = 19,
+        opacity = 0.25,
+        line = list(color = "blue"),
+        fillcolor = "blue"
+)
+Q1 = list(
+        type = "rect",
+        xref = "x", yref = "y",
+        x0 = 0, y0 = 0,
+        x1 = -25, y1 = 22,
+        opacity = 0.25,
+        line = list(color = "blue"),
+        fillcolor = "blue"
+)
+Q2 = list(
+        type = "rect",
+        xref = "x", yref = "y",
+        x0 = 0, y0 = 0,
+        x1 = -20, y1 = -17,
+        opacity = 0.25,
+        line = list(color = "blue"),
+        fillcolor = "blue"
+)
+Q3 = list(
+        type = "rect",
+        xref = "x", yref = "y",
+        x0 = 0, y0 = 0,
+        x1 = 22, y1 = -28,
+        opacity = 0.25,
+        line = list(color = "blue"),
+        fillcolor = "blue"
+)
+
+updatemenus <- list(
+        list(active = -1,
+             type = "buttons",
+             xanchor = "center",
+             yanchor = "top",
+             x = 1.2,
+             y = 0.9,
+             buttons = list(
+                     list(
+                             label = "None",
+                             method = "relayout",
+                             args = list(list(shapes = c()))
+                     ),
+                     list(
+                             label = "1",
+                             method = "relayout",
+                             args = list(list(shapes = list(Q0, c(), c(), c())))
+                     ),
+                     list(
+                             label = "2",
+                             method = "relayout",
+                             args = list(list(shapes = list(c(), Q1, c(), c())))
+                     ),
+                     list(
+                             label = "3",
+                             method = "relayout",
+                             args = list(list(shapes = list(c(), c(), Q2, c())))
+                     ),
+                     list(
+                             label = "4",
+                             method = "relayout",
+                             args = list(list(shapes = list(c(), c(), c(), Q3)))
+                     )
+             ))
+)
+
+a1 <- list(title = "Offensive Ranks Ahead of Opponent")
+a2 <- list(title = "Defensive Ranks Ahead of Opponent")
+p1 = plot_ly(x = odiff, y = ddiff, 
+             type = "scatter",
+             mode = "markers",
+             marker = list(size = 9,
+                           color = "lightgreen",
+                           line = list(color = "darkgreen",
+                                       width = 2)),
+             text = paste(df$id[1:51], "<br>", df$.Tm[1:51])) %>%
+        layout(xaxis = a1, yaxis = a2,
+               showlegend = FALSE,
+               updatemenus = updatemenus) 
+p1
+```
+
+## Further Notes
+
+Out of the 51 winning super bowl teams (when compared to their super bowl opponents):
+
+- `r sum(ifelse(odiff > 0 & ddiff < 0, 1, 0))` had only a better offense
+- `r sum(ifelse(ddiff > 0 & odiff < 0, 1, 0))` had only a better defense
+- `r sum(ifelse(odiff > 0 & ddiff > 0, 1, 0))` had a better offense and defense
+- `r sum(ifelse(odiff < 0 & ddiff < 0, 1, 0))` had a worse offense and defense
+
